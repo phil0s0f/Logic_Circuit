@@ -5,9 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,7 +29,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,32 +39,25 @@ import com.example.logiccircuit.ui.theme.LogicCircuitTheme
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
-    enum class BUTTON_POINT_CLASS {
-        ENTER1,
-        ENTER2,
-        EXIT,
-    }
 
     enum class COMPONENT_TYPE_CLASS {
         AND,
         OR,
         INV,
+        NAND,
+        NOR
     }
 
     interface IButtonPoint {
         val isActive: Boolean;
         val layout_x: MutableState<Float>;
         val layout_y: MutableState<Float>;
-        val connected_to: IButtonPoint?;
-//        val type: BUTTON_POINT_CLASS
     }
 
     data class ButtonPoint(
         override val isActive: Boolean,
         override val layout_x: MutableState<Float>,
         override val layout_y: MutableState<Float>,
-        override val connected_to: IButtonPoint?,
-//        override val type: BUTTON_POINT_CLASS
     ) : IButtonPoint
 
     interface IComponent {
@@ -105,17 +95,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            //TODO сделать их mutablelist
-
             var activePoint1: MutableState<ButtonPoint?> = remember { mutableStateOf(null) }
             var activePoint2: MutableState<ButtonPoint?> = remember { mutableStateOf(null) }
             LogicCircuitTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
-                    //modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CanvasPreview(activePoint1,activePoint2)
+                    CanvasPreview(activePoint1, activePoint2)
                 }
             }
         }
@@ -127,7 +113,7 @@ class MainActivity : ComponentActivity() {
         activePoint2: MutableState<ButtonPoint?>
 
     ) {
-        var andElementCount by remember { mutableStateOf(0) }
+        var elementCount by remember { mutableStateOf(0) }
         var lineCount = remember { mutableStateOf(0) }
 
         Box(
@@ -135,18 +121,17 @@ class MainActivity : ComponentActivity() {
                 .fillMaxSize()
         )
         {
-
             Canvas(modifier = Modifier.fillMaxSize()) {
-                repeat(lineCount.value) { index ->//TODO
+                repeat(lineCount.value) { index ->
                     drawLine(
                         color = Color.Black,
                         start = Offset(
-                            lineList[index].start_button.layout_x.value,
-                            lineList[index].start_button.layout_y.value,
+                            lineList[index].start_button.layout_x.value + 7.dp.toPx(),
+                            lineList[index].start_button.layout_y.value + 7.dp.toPx(),
                         ),
                         end = Offset(
-                            lineList[index].end_button.layout_x.value,
-                            lineList[index].end_button.layout_y.value,
+                            lineList[index].end_button.layout_x.value + 7.dp.toPx(),
+                            lineList[index].end_button.layout_y.value + 7.dp.toPx(),
                         ),
                         strokeWidth = 2.dp.toPx(),
                         cap = StrokeCap.Round
@@ -161,15 +146,14 @@ class MainActivity : ComponentActivity() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 25.dp, end = 25.dp)
+                    .padding(start = 15.dp, end = 25.dp)
 
             )
             {
                 Column(
                     modifier = Modifier
-                        .size(110.dp, 500.dp)//TODO: Изменить размер по высоте
-                        .padding(15.dp)
-                        .border(1.dp, Color.Gray)
+                        .size(110.dp, 500.dp)
+                        .padding(5.dp)
 
                 )
                 {
@@ -183,25 +167,22 @@ class MainActivity : ComponentActivity() {
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(435f),
-                                        mutableStateOf(219f),
-                                        null
+                                        mutableStateOf(219f)
                                     ),
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(435f),
-                                        mutableStateOf(413f),
-                                        null
+                                        mutableStateOf(413f)
                                     ),
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(717f),
-                                        mutableStateOf(316f),
-                                        null
+                                        mutableStateOf(316f)
                                     ),
                                     COMPONENT_TYPE_CLASS.AND
                                 )
                             )
-                            andElementCount++
+                            elementCount++
                         }
                     )
                     {
@@ -218,43 +199,155 @@ class MainActivity : ComponentActivity() {
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(435f),
-                                        mutableStateOf(219f),
-                                        null
+                                        mutableStateOf(219f)
                                     ),
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(435f),
-                                        mutableStateOf(413f),
-                                        null
+                                        mutableStateOf(413f)
                                     ),
                                     ButtonPoint(
                                         false,
                                         mutableStateOf(717f),
-                                        mutableStateOf(316f),
-                                        null
+                                        mutableStateOf(316f)
                                     ),
                                     COMPONENT_TYPE_CLASS.OR
                                 )
                             )
-                            andElementCount++
+                            elementCount++
                         }
                     )
                     {
                         Text(text = "OR")
                     }
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            componentList.add(
+                                MyComponent(
+                                    mutableStateOf(500f),
+                                    mutableStateOf(200f),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(316f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(413f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(717f),
+                                        mutableStateOf(316f)
+                                    ),
+                                    COMPONENT_TYPE_CLASS.INV
+                                )
+                            )
+                            elementCount++
+                        }
+                    )
+                    {
+                        Text(text = "INV")
+                    }
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            componentList.add(
+                                MyComponent(
+                                    mutableStateOf(500f),
+                                    mutableStateOf(200f),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(219f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(413f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(717f),
+                                        mutableStateOf(316f)
+                                    ),
+                                    COMPONENT_TYPE_CLASS.NAND
+                                )
+                            )
+                            elementCount++
+                        }
+                    )
+                    {
+                        Text(text = "NAND")
+                    }
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            componentList.add(
+                                MyComponent(
+                                    mutableStateOf(500f),
+                                    mutableStateOf(200f),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(219f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(435f),
+                                        mutableStateOf(413f)
+                                    ),
+                                    ButtonPoint(
+                                        false,
+                                        mutableStateOf(717f),
+                                        mutableStateOf(316f)
+                                    ),
+                                    COMPONENT_TYPE_CLASS.NOR
+                                )
+                            )
+                            elementCount++
+                        }
+                    )
+                    {
+                        Text(text = "NOR")
+                    }
                 }
+//                ClickableText(
+//                    text = AnnotatedString("X"),
+//                    onClick = {
+//                        var buttonText = ButtonPoint(
+//                            false,
+//                            mutableStateOf(350f),
+//                            mutableStateOf(0f)
+//                        )
+//                        if (activePoint2.value == null && activePoint1.value != null) {
+//                            buttonText.layout_y.value = activePoint1.value!!.layout_y.value
+//                            activePoint2.value = buttonText
+//                        }
+//                        if (activePoint1.value != null && activePoint2.value != null) {
+//                            lineList.add(
+//                                LineBetweenComponent(
+//                                    activePoint1.value!!,
+//                                    activePoint2.value!!
+//                                )
+//                            )
+//                            lineCount.value++
+//                        }
+//                    }
+//                )
             }
 
-            repeat(andElementCount) { index ->
-                DrawAnd(componentList.get(index), lineCount, activePoint1, activePoint2)
-//                Log.e("ksl", "kal")
-//                DrawAnd()
+            repeat(elementCount) { index ->
+                DrawElement(componentList.get(index), lineCount, activePoint1, activePoint2)
             }
         }
     }
 
     @Composable
-    fun DrawAnd(
+    fun DrawElement(
         component: IComponent,
         lineCount: MutableState<Int>,
         activePoint1: MutableState<ButtonPoint?>,
@@ -269,9 +362,8 @@ class MainActivity : ComponentActivity() {
         var textToDraw = ""
 
         when (component.component_type.name) {
-            "AND" -> textToDraw = "&"
-            "OR" -> textToDraw = "1"
-            "INV" -> textToDraw = "1"
+            "AND", "NAND" -> textToDraw = "&"
+            "OR", "INV", "NOR" -> textToDraw = "1"
         }
 
         Box(
@@ -298,8 +390,10 @@ class MainActivity : ComponentActivity() {
                         component.layout_y.value += dragAmount.y
                         component.enter1_button.layout_x.value += dragAmount.x
                         component.enter1_button.layout_y.value += dragAmount.y
-                        component.enter2_button.layout_x.value += dragAmount.x
-                        component.enter2_button.layout_y.value += dragAmount.y
+                        if (component.component_type.name != "INV") {
+                            component.enter2_button.layout_x.value += dragAmount.x
+                            component.enter2_button.layout_y.value += dragAmount.y
+                        }
                         component.exit_button.layout_x.value += dragAmount.x
                         component.exit_button.layout_y.value += dragAmount.y
                     }
@@ -317,20 +411,10 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            var index = 0
             Canvas(
                 modifier = Modifier
 //            .offset(300.dp, 100.dp)
-                    .pointerInput(Unit) {//TODO
-                        detectTapGestures(
-                            onTap = {
-                                // When the user taps on the Canvas, you can
-                                // check if the tap offset is in one of the
-                                // tracked Rects.
-                                index++
-                            }
-                        )
-                    }
+
             ) {
                 drawRoundRect(
                     color = Color.Black,
@@ -338,37 +422,33 @@ class MainActivity : ComponentActivity() {
                     cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx()),
                     style = Stroke(strokeWidth.toPx())
                 )
-                //Рисуем левую верхнюю линию
-                drawLine(
-                    color = Color.Black,
-                    start = Offset(center.x, center.y + 40f),
-                    end = Offset(center.x - 40f, center.y + 40f),
-                    strokeWidth = strokeWidth.toPx(),
-                    cap = StrokeCap.Round
-                )
-//            drawPoints(
-//                points = listOf(Offset(center.x - 40f, center.y + 40f)),
-//                pointMode = PointMode.Points,
-//                cap = StrokeCap.Round,
-//                color = Color.Red,
-//                strokeWidth = 25f
-//            )
+                if (component.component_type.name != "INV") {
+                    //Рисуем левую верхнюю линию
+                    drawLine(
+                        color = Color.Black,
+                        start = Offset(center.x, center.y + 40f),
+                        end = Offset(center.x - 40f, center.y + 40f),
+                        strokeWidth = strokeWidth.toPx(),
+                        cap = StrokeCap.Round
+                    )
 
-                //Рисуем левую нижнию линию
-                drawLine(
-                    color = Color.Black,
-                    start = Offset(center.x, rectangleHeight.toPx() - 40f),
-                    end = Offset(center.x - 40f, rectangleHeight.toPx() - 40f),
-                    strokeWidth = strokeWidth.toPx(),
-                    cap = StrokeCap.Round
-                )
-                drawPoints(
-                    points = listOf(Offset(center.x - 40f, rectangleHeight.toPx() - 40f)),
-                    pointMode = PointMode.Points,
-                    cap = StrokeCap.Round,
-                    color = Color.Red,
-                    strokeWidth = 25f
-                )
+                    //Рисуем левую нижнию линию
+                    drawLine(
+                        color = Color.Black,
+                        start = Offset(center.x, rectangleHeight.toPx() - 40f),
+                        end = Offset(center.x - 40f, rectangleHeight.toPx() - 40f),
+                        strokeWidth = strokeWidth.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                } else {
+                    drawLine(
+                        color = Color.Black,
+                        start = Offset(center.x, rectangleHeight.toPx() / 2),
+                        end = Offset(center.x - 40f, rectangleHeight.toPx() / 2),
+                        strokeWidth = strokeWidth.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                }
 
                 // Рисуем линию справа
                 drawLine(
@@ -378,26 +458,25 @@ class MainActivity : ComponentActivity() {
                     strokeWidth = strokeWidth.toPx(),
                     cap = StrokeCap.Round
                 )
-                drawPoints(
-                    points = listOf(
-                        Offset(
-                            rectangleWidth.toPx() + 40f,
-                            rectangleHeight.toPx() / 2
-                        )
-                    ),
-                    pointMode = PointMode.Points,
-                    cap = StrokeCap.Round,
-                    color = Color.Red,
-                    strokeWidth = 25f
-                )
-
+                if (component.component_type.name != "AND" && component.component_type.name != "OR") {
+                    drawCircle(
+                        color = Color.Black,
+                        radius = 5.dp.toPx(),
+                        style = Stroke(width = 2.dp.toPx()),
+                        center = Offset(x = rectangleWidth.toPx(), y = rectangleHeight.toPx() / 2)
+                    )
+                    drawCircle(
+                        color = Color.White,
+                        radius = 5.dp.toPx(),
+                        center = Offset(x = rectangleWidth.toPx(), y = rectangleHeight.toPx() / 2)
+                    )
+                }
             }
 
 
         }
         Button(
             onClick = {
-                Log.e("test", "WORK")
                 if (activePoint1.value == null) {
                     activePoint1.value = component.enter1_button
                 } else if (activePoint2.value == null) {
@@ -419,30 +498,35 @@ class MainActivity : ComponentActivity() {
         )
         {
         }
-
-        Button(
-            onClick = {
-                Log.e("test", "WORK")
-                if (activePoint1.value == null) {
-                    activePoint1.value = component.enter2_button
-                } else if (activePoint2.value == null) {
-                    activePoint2.value = component.enter2_button
-                }
-                if (activePoint1.value != null && activePoint2.value != null) {
-                    lineList.add(LineBetweenComponent(activePoint1.value!!, activePoint2.value!!))
-                    lineCount.value++
-                }
-            },
-            modifier = Modifier
-                .size(15.dp)
-                .offset {
-                    IntOffset(
-                        component.enter2_button.layout_x.value.roundToInt(),
-                        component.enter2_button.layout_y.value.roundToInt()
-                    )
-                }
-        )
-        {
+        if (component.component_type.name != "INV") {
+            Button(
+                onClick = {
+                    if (activePoint1.value == null) {
+                        activePoint1.value = component.enter2_button
+                    } else if (activePoint2.value == null) {
+                        activePoint2.value = component.enter2_button
+                    }
+                    if (activePoint1.value != null && activePoint2.value != null) {
+                        lineList.add(
+                            LineBetweenComponent(
+                                activePoint1.value!!,
+                                activePoint2.value!!
+                            )
+                        )
+                        lineCount.value++
+                    }
+                },
+                modifier = Modifier
+                    .size(15.dp)
+                    .offset {
+                        IntOffset(
+                            component.enter2_button.layout_x.value.roundToInt(),
+                            component.enter2_button.layout_y.value.roundToInt()
+                        )
+                    }
+            )
+            {
+            }
         }
         Button(
             onClick = {
