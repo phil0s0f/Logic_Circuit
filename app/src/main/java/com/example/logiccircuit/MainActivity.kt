@@ -1,7 +1,6 @@
 package com.example.logiccircuit
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -55,7 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 
     data class ButtonPoint(
-        override val isActive: Boolean,
+        override var isActive: Boolean,
         override val layout_x: MutableState<Float>,
         override val layout_y: MutableState<Float>,
     ) : IButtonPoint
@@ -111,7 +110,6 @@ class MainActivity : ComponentActivity() {
     fun CanvasPreview(
         activePoint1: MutableState<ButtonPoint?>,
         activePoint2: MutableState<ButtonPoint?>
-
     ) {
         var elementCount by remember { mutableStateOf(0) }
         var lineCount = remember { mutableStateOf(0) }
@@ -140,21 +138,16 @@ class MainActivity : ComponentActivity() {
                     activePoint2.value = null
                 }
             }
-
-
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 15.dp, end = 25.dp)
-
             )
             {
                 Column(
                     modifier = Modifier
                         .size(110.dp, 500.dp)
                         .padding(5.dp)
-
                 )
                 {
                     Button(
@@ -188,7 +181,6 @@ class MainActivity : ComponentActivity() {
                     {
                         Text(text = "AND")
                     }
-
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -220,7 +212,6 @@ class MainActivity : ComponentActivity() {
                     {
                         Text(text = "OR")
                     }
-
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -315,31 +306,7 @@ class MainActivity : ComponentActivity() {
                         Text(text = "NOR")
                     }
                 }
-//                ClickableText(
-//                    text = AnnotatedString("X"),
-//                    onClick = {
-//                        var buttonText = ButtonPoint(
-//                            false,
-//                            mutableStateOf(350f),
-//                            mutableStateOf(0f)
-//                        )
-//                        if (activePoint2.value == null && activePoint1.value != null) {
-//                            buttonText.layout_y.value = activePoint1.value!!.layout_y.value
-//                            activePoint2.value = buttonText
-//                        }
-//                        if (activePoint1.value != null && activePoint2.value != null) {
-//                            lineList.add(
-//                                LineBetweenComponent(
-//                                    activePoint1.value!!,
-//                                    activePoint2.value!!
-//                                )
-//                            )
-//                            lineCount.value++
-//                        }
-//                    }
-//                )
             }
-
             repeat(elementCount) { index ->
                 DrawElement(componentList.get(index), lineCount, activePoint1, activePoint2)
             }
@@ -353,19 +320,14 @@ class MainActivity : ComponentActivity() {
         activePoint1: MutableState<ButtonPoint?>,
         activePoint2: MutableState<ButtonPoint?>
     ) {
-
-
         val rectangleWidth = 70.dp
         val rectangleHeight = 100.dp
-
         val strokeWidth = 2.dp
         var textToDraw = ""
-
         when (component.component_type.name) {
             "AND", "NAND" -> textToDraw = "&"
             "OR", "INV", "NOR" -> textToDraw = "1"
         }
-
         Box(
             Modifier
                 .offset {
@@ -378,14 +340,6 @@ class MainActivity : ComponentActivity() {
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
-                        Log.e(
-                            "cordComp",
-                            "${component.layout_x.value}, ${component.layout_y.value}"
-                        )
-                        Log.e(
-                            "cordB",
-                            "${component.enter1_button.layout_x.value}, ${component.enter1_button.layout_y.value}"
-                        )
                         component.layout_x.value += dragAmount.x
                         component.layout_y.value += dragAmount.y
                         component.enter1_button.layout_x.value += dragAmount.x
@@ -410,11 +364,8 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             )
-
             Canvas(
                 modifier = Modifier
-//            .offset(300.dp, 100.dp)
-
             ) {
                 drawRoundRect(
                     color = Color.Black,
@@ -431,7 +382,6 @@ class MainActivity : ComponentActivity() {
                         strokeWidth = strokeWidth.toPx(),
                         cap = StrokeCap.Round
                     )
-
                     //Рисуем левую нижнию линию
                     drawLine(
                         color = Color.Black,
@@ -449,7 +399,6 @@ class MainActivity : ComponentActivity() {
                         cap = StrokeCap.Round
                     )
                 }
-
                 // Рисуем линию справа
                 drawLine(
                     color = Color.Black,
@@ -472,19 +421,26 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-
-
         }
         Button(
             onClick = {
-                if (activePoint1.value == null) {
-                    activePoint1.value = component.enter1_button
-                } else if (activePoint2.value == null) {
-                    activePoint2.value = component.enter1_button
-                }
-                if (activePoint1.value != null && activePoint2.value != null) {
-                    lineList.add(LineBetweenComponent(activePoint1.value!!, activePoint2.value!!))
-                    lineCount.value++
+                if (!component.enter1_button.isActive) {
+                    if (activePoint1.value == null) {
+                        component.enter1_button.isActive = true
+                        activePoint1.value = component.enter1_button
+                    } else if (activePoint2.value == null) {
+                        component.enter1_button.isActive = true
+                        activePoint2.value = component.enter1_button
+                    }
+                    if (activePoint1.value != null && activePoint2.value != null) {
+                        lineList.add(
+                            LineBetweenComponent(
+                                activePoint1.value!!,
+                                activePoint2.value!!
+                            )
+                        )
+                        lineCount.value++
+                    }
                 }
             },
             modifier = Modifier
@@ -501,19 +457,23 @@ class MainActivity : ComponentActivity() {
         if (component.component_type.name != "INV") {
             Button(
                 onClick = {
-                    if (activePoint1.value == null) {
-                        activePoint1.value = component.enter2_button
-                    } else if (activePoint2.value == null) {
-                        activePoint2.value = component.enter2_button
-                    }
-                    if (activePoint1.value != null && activePoint2.value != null) {
-                        lineList.add(
-                            LineBetweenComponent(
-                                activePoint1.value!!,
-                                activePoint2.value!!
+                    if (!component.enter2_button.isActive) {
+                        if (activePoint1.value == null) {
+                            component.enter2_button.isActive = true
+                            activePoint1.value = component.enter2_button
+                        } else if (activePoint2.value == null) {
+                            component.enter2_button.isActive = true
+                            activePoint2.value = component.enter2_button
+                        }
+                        if (activePoint1.value != null && activePoint2.value != null) {
+                            lineList.add(
+                                LineBetweenComponent(
+                                    activePoint1.value!!,
+                                    activePoint2.value!!
+                                )
                             )
-                        )
-                        lineCount.value++
+                            lineCount.value++
+                        }
                     }
                 },
                 modifier = Modifier
@@ -530,15 +490,23 @@ class MainActivity : ComponentActivity() {
         }
         Button(
             onClick = {
-                Log.e("test", "WORK")
-                if (activePoint1.value == null) {
-                    activePoint1.value = component.exit_button
-                } else if (activePoint2.value == null) {
-                    activePoint2.value = component.exit_button
-                }
-                if (activePoint1.value != null && activePoint2.value != null) {
-                    lineList.add(LineBetweenComponent(activePoint1.value!!, activePoint2.value!!))
-                    lineCount.value++
+                if (!component.exit_button.isActive) {
+                    if (activePoint1.value == null) {
+                        component.exit_button.isActive = true
+                        activePoint1.value = component.exit_button
+                    } else if (activePoint2.value == null) {
+                        component.exit_button.isActive = true
+                        activePoint2.value = component.exit_button
+                    }
+                    if (activePoint1.value != null && activePoint2.value != null) {
+                        lineList.add(
+                            LineBetweenComponent(
+                                activePoint1.value!!,
+                                activePoint2.value!!
+                            )
+                        )
+                        lineCount.value++
+                    }
                 }
             },
             modifier = Modifier
